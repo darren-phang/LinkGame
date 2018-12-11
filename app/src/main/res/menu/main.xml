@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/degree_of_difficulty"
+        android:orderInCategory="100"
+        android:title="@string/degree_of_difficulty"
+        app:showAsAction="never" >
+        <menu >
+            <group android:id="@+id/sub_group_difficulty">
+                <item android:id="@+id/sub_difficulty_1" android:title="Simple"/>
+                <item android:id="@+id/sub_difficulty_2" android:title="Medium"/>
+                <item android:id="@+id/sub_difficulty_3" android:title="Hard"/>
+            </group>
+        </menu>
+    </item>
+
+    <item
+        android:id="@+id/number_of_block"
+        android:orderInCategory="100"
+        android:title="@string/number_of_block"
+        app:showAsAction="never" >
+        <menu >
+            <group android:id="@+id/sub_group_number">
+                <item android:id="@+id/sub_number_1" android:title="10"/>
+                <item android:id="@+id/sub_number_2" android:title="15"/>
+                <item android:id="@+id/sub_number_3" android:title="25"/>
+            </group>
+        </menu>
+    </item>
+
+
+</menu>

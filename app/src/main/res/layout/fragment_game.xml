@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".Game_F">
+
+
+    <include layout="@layout/content_main" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="150dp"
+        android:layout_gravity="bottom"
+        android:orientation="vertical">
+
+        <ProgressBar
+            android:id="@+id/TimeProgressbar"
+            style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+            android:layout_width="330dp"
+            android:layout_height="30dp"
+            android:layout_gravity="center"
+            android:layout_margin="@dimen/fab_margin"
+            android:background="@drawable/time_progressbar"
+            android:indeterminateDrawable="@android:drawable/progress_indeterminate_horizontal"
+            android:indeterminateOnly="false"
+            android:max="100"
+            android:maxHeight="50dp"
+            android:minHeight="16dp"
+            android:progress="100"
+            android:progressDrawable="@drawable/time_progressbar" />
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <Button
+                android:id="@+id/start"
+                android:layout_width="wrap_content"
+                android:layout_height="50dp"
+                android:layout_alignTop="@+id/fab"
+                android:layout_alignParentStart="true"
+                android:layout_gravity="center_vertical"
+                android:layout_marginStart="143dp"
+                android:layout_marginTop="3dp"
+                android:background="@drawable/btn_shape"
+                android:text="开始"
+                android:textSize="20dp" />
+
+            <Button
+                android:id="@+id/fab"
+                android:layout_width="50dip"
+                android:layout_height="50dip"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:layout_gravity="bottom|end"
+                android:layout_marginEnd="15dp"
+                android:background="@drawable/hint_superscript_red"
+                android:text="3"
+                android:textSize="20dp" />
+        </RelativeLayout>
+
+    </LinearLayout>
+
+
+</FrameLayout>
