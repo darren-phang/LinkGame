@@ -1,108 +1,90 @@
 package com.example.pangd.linkgame;
 
-import android.content.Context;
-import android.net.Uri;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
+import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+
+import com.example.pangd.linkgame.FragmentSet.RankAdapter;
+import com.example.pangd.linkgame.FragmentSet.RankItem;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
-/**
- * A simple {@link Fragment} subclass.
- * Activities that contain this fragment must implement the
- * {@link Rank_F.OnFragmentInteractionListener} interface
- * to handle interaction events.
- * Use the {@link Rank_F#newInstance} factory method to
- * create an instance of this fragment.
- */
 public class Rank_F extends Fragment {
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
+    private int degreeDifficult;
+    private Database dbHelper;
+    private int numberBlock;
+    private List<RankItem> blockList = new ArrayList<>();
 
-    // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
-
-    private OnFragmentInteractionListener mListener;
-
-    public Rank_F() {
-        // Required empty public constructor
+    public void setDegreeDifficult(int degreeDifficult) {
+        this.degreeDifficult = degreeDifficult;
     }
 
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
-     * @return A new instance of fragment Rank_F.
-     */
-    // TODO: Rename and change types and number of parameters
-    public static Rank_F newInstance(String param1, String param2) {
-        Rank_F fragment = new Rank_F();
-        Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
-        fragment.setArguments(args);
-        return fragment;
-    }
-
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
-        }
+    public void setNumberBlock(int numberBlock) {
+        this.numberBlock = numberBlock;
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_rank, container, false);
+        dbHelper = new Database(getActivity().getApplicationContext(), "RankInfo.db", null, 2);
+        View view = inflater.inflate(R.layout.fragment_rank, container, false);
+
+        Button button = (Button) view.findViewById(R.id.return_to_main);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                replaceFragment();
+            }
+        });
+        getRankInfo();
+        RecyclerView recyclerView = (RecyclerView) view.findViewById(R.id.recycle_rank_view);
+        StaggeredGridLayoutManager layoutManager = new
+                StaggeredGridLayoutManager(1,StaggeredGridLayoutManager.VERTICAL);
+
+        recyclerView.setLayoutManager(layoutManager);
+        RankAdapter adapter = new RankAdapter(blockList);
+        recyclerView.setAdapter(adapter);
+        return view;
     }
 
-    // TODO: Rename method, update argument and hook method into UI event
-    public void onButtonPressed(Uri uri) {
-        if (mListener != null) {
-            mListener.onFragmentInteraction(uri);
+    private void getRankInfo(){
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        Cursor cursor = db.query("RANK", null, "degreeDifficult=? and numberBlock=?",
+                new String[]{Integer.toString(degreeDifficult), Integer.toString(numberBlock)},
+                null, null, "costTime asc");
+
+        int rank_number_auto = 1;
+        if(cursor.moveToFirst()){
+            do{
+                String rank_number = Integer.toString(rank_number_auto);
+                String cost_time = Double.toString(cursor.getDouble(cursor.getColumnIndex("costTime")));
+                String player_name = cursor.getString(cursor.getColumnIndex("playerName"));
+                String input_time = cursor.getString(cursor.getColumnIndex("inputTime"));
+                rank_number_auto += 1;
+                RankItem rankItem = new RankItem(rank_number, cost_time, player_name, input_time);
+                blockList.add(rankItem);
+            }while (cursor.moveToNext() && rank_number_auto<=40);
         }
     }
 
-    @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-        if (context instanceof OnFragmentInteractionListener) {
-            mListener = (OnFragmentInteractionListener) context;
-        } else {
-            throw new RuntimeException(context.toString()
-                    + " must implement OnFragmentInteractionListener");
-        }
+    private void replaceFragment(){
+        MainActivity.setBar_Action(true);  // 让bar按键可响应
+        FragmentManager fragmentManager = getActivity().getSupportFragmentManager();
+        FragmentTransaction transaction = fragmentManager.beginTransaction();
+        transaction.replace(R.id.frame_layout, MainActivity.getNow_Fragmet());
+        transaction.commit();
     }
 
-    @Override
-    public void onDetach() {
-        super.onDetach();
-        mListener = null;
-    }
-
-    /**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     * <p>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
-     */
-    public interface OnFragmentInteractionListener {
-        // TODO: Update argument type and name
-        void onFragmentInteraction(Uri uri);
-    }
 }

@@ -2,6 +2,7 @@ package com.example.pangd.linkgame.Other;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.view.MotionEvent;
 
 
 import com.example.pangd.linkgame.R;
@@ -12,6 +13,11 @@ public class EndGame extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_end_game);
 
+    }
+
+    public boolean onTouchEvent(MotionEvent event) {
+        finish();
+        return true;
     }
 
     @Override

@@ -1,6 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_flush"
+        android:icon="@drawable/ic_shuffle_white_24dp"
+        android:orderInCategory="90"
+        android:title="share"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_review"
+        android:icon="@drawable/ic_autorenew_white_24dp"
+        android:orderInCategory="90"
+        android:title="share"
+        app:showAsAction="ifRoom" />
+
     <item
         android:id="@+id/degree_of_difficulty"
         android:orderInCategory="100"

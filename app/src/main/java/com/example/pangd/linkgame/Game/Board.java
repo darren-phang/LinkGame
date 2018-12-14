@@ -47,16 +47,16 @@ public class Board {
         // return[0] = 0 无效, return[1] return[2], 选择的第一二个点
         //
         if (TypeBlock[position / Game.getCol()][position % Game.getCol()] == Board.nullType) {
-            return new int[]{0};
+            return new int[]{0};  // 点击无效的区域
         }
         clickNumber++;
-        if (clickNumber % 2 != 0) {
+        if (clickNumber % 2 != 0) {  //点击次数不为2的倍数，返回点击位置
             position_temp = position;
             Location[0] = position / Game.getCol();
             Location[1] = position % Game.getCol();
             Type_temp = TypeBlock[position / Game.getCol()][position % Game.getCol()];
             return new int[]{1, position, R.drawable.selected};
-        } else {
+        } else { //点击次数为2的倍数，可达性判断
             Location[2] = position / Game.getCol();
             Location[3] = position % Game.getCol();
             if (position_temp != position
@@ -103,7 +103,7 @@ public class Board {
     }
 
     private void _isArrive(int x, int y, int not_go, int have_turn) {
-        // not_go 上下左右 1,2,3,4
+        // not_go 上下左右 1,2,link,4
         // not_go 就是上次从那个方向来的
         int[] offset = new int[]{-Game.getCol(), Game.getCol(), -1, 1};
         int[] go = new int[]{2, 1, 4, 3};
@@ -160,7 +160,7 @@ class _Location {
     private int not_go;
     private int have_turn;
 
-    // not_go 1:上 2:下 3:左 4:右
+    // not_go 1:上 2:下 link:左 4:右
     _Location(int x, int y, int not_go, int have_turn) {
         this.x = x;
         this.y = y;

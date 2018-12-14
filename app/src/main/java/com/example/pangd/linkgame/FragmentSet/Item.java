@@ -1,4 +1,4 @@
-package com.example.pangd.linkgame;
+package com.example.pangd.linkgame.FragmentSet;
 
 public class Item {
     private int imageId;
