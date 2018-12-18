@@ -22,7 +22,7 @@ import java.util.List;
 
 public class Rank_F extends Fragment {
     private int degreeDifficult;
-    private Database dbHelper;
+    private Database_RANK dbHelper;
     private int numberBlock;
     private List<RankItem> blockList = new ArrayList<>();
 
@@ -38,7 +38,7 @@ public class Rank_F extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        dbHelper = new Database(getActivity().getApplicationContext(), "RankInfo.db", null, 2);
+        dbHelper = new Database_RANK(getActivity().getApplicationContext(), "RankInfo.db", null, 2);
         View view = inflater.inflate(R.layout.fragment_rank, container, false);
 
         Button button = (Button) view.findViewById(R.id.return_to_main);

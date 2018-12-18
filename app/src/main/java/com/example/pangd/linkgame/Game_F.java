@@ -52,6 +52,15 @@ public class Game_F extends Fragment {
     boolean IsStart = false;
     SoundPoolUtil sound;
     private static final String TAG = "Game_F";
+    int click_music = 1;
+
+    public int getClick_music() {
+        return click_music;
+    }
+
+    public void setClick_music(int click_music){
+        this.click_music = click_music;
+    }
 
     public void setDegree(int degree) {
         this.degree = degree;
@@ -91,7 +100,7 @@ public class Game_F extends Fragment {
                             handler.sendMessage(message);
                         }
                     }, 1000, 100);
-                    sound.play(sound.START);
+                    sound.play(sound.START, click_music);
                     IsStart = true;
                     startButton.setVisibility(View.INVISIBLE);
                 }
@@ -100,8 +109,8 @@ public class Game_F extends Fragment {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                sound.play(sound.FLUSH);
                 if (flush > 0 && IsStart) {
+                    sound.play(sound.FLUSH, click_music);
                     flush -= 1;
                     fab.setText(Integer.toString(flush));
                     board.disorganize();
@@ -126,7 +135,7 @@ public class Game_F extends Fragment {
                     allTime_Temp -= 1;
                     progressBar.setProgress(allTime_Temp);
                     if (allTime_Temp < 0) {
-                        sound.play(sound.LOSS);
+                        sound.play(sound.LOSS, click_music);
                         DialogUIUtils.showMdAlert(getActivity(), "Loss",
                                 "在来一局", new DialogUIListener() {
                                     @Override
@@ -223,15 +232,15 @@ public class Game_F extends Fragment {
                     if (_info[0] != 0) {
                         if (_info.length == 3) {
                             if(_info[2]==R.drawable.null_image){
-                                sound.play(sound.REPEAT);
+                                sound.play(sound.REPEAT, click_music);
                             }//点重
                             adapter.changeItem(_info[1], -1, _info[2]);
                         } else {
                             adapter.changeItem(_info[1], R.drawable.null_image, -1);
                             adapter.changeItem(_info[2], R.drawable.null_image, R.drawable.null_image);
-                            sound.play(sound.LINK);    //消除
+                            sound.play(sound.LINK, click_music);    //消除
                             if (_info.length == 5) {
-                                sound.play(sound.WIN);   //获胜
+                                sound.play(sound.WIN, click_music);   //获胜
                                 sendRankBroadcast("defaultUser", (double)(allTime-allTime_Temp)/10);
 //                                Intent intent = new Intent("com.example.broadcast.RANK_INFOMATION");
 //                                getActivity().sendBroadcast(intent);
@@ -241,7 +250,7 @@ public class Game_F extends Fragment {
                         }
                     }
                     else {
-                        sound.play(sound.WRONG);   //点错
+                        sound.play(sound.WRONG, click_music);   //点错
                     }
                 }
             }
@@ -299,10 +308,12 @@ class SoundPoolUtil {
         soundPool.load(context, R.raw.repeat, 1);
     }
 
-    public void play(int number) {
+    public void play(int number, int Isopen) {
         Log.d("tag", "number " + number);
         //播放音频
-        soundPool.play(number, 1, 1, 0, 0, 1);
+        if (Isopen == 1){
+            soundPool.play(number, 1, 1, 0, 0, 1);
+        }
     }
 
 }

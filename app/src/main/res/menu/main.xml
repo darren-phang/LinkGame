@@ -44,5 +44,30 @@
         </menu>
     </item>
 
+    <item
+        android:id="@+id/background_music"
+        android:orderInCategory="100"
+        android:title="background music setting"
+        app:showAsAction="never" >
+        <menu >
+            <group android:id="@+id/background_music_setting">
+                <item android:id="@+id/background_music_open" android:title="open"/>
+                <item android:id="@+id/background_music_close" android:title="close"/>
+            </group>
 
+        </menu>
+    </item>
+
+    <item
+        android:id="@+id/click_music"
+        android:orderInCategory="100"
+        android:title="click music setting"
+        app:showAsAction="never" >
+        <menu>
+            <group android:id="@+id/click_music_setting">
+                <item android:id="@+id/click_music_open" android:title="open"/>
+                <item android:id="@+id/click_music_close" android:title="close"/>
+            </group>
+        </menu>
+    </item>
 </menu>
