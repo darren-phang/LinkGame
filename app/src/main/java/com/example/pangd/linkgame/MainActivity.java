@@ -42,9 +42,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -53,7 +51,6 @@ import com.dou361.dialogui.DialogUIUtils;
 import com.dou361.dialogui.bean.TieBean;
 import com.dou361.dialogui.listener.DialogUIItemListener;
 import com.dou361.dialogui.listener.DialogUIListener;
-import com.example.pangd.linkgame.FragmentSet.RankItem;
 import com.example.pangd.linkgame.Other.CopyRight;
 
 import java.io.BufferedReader;
@@ -74,30 +71,39 @@ public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     private static final String TAG = "MainActivity";
+    private static boolean bar_Action = true;
+    public static Game_F Now_Fragmet;
+
     private String Username = "defaultUser";
-    private String UserHeadImage = null;
+    private String UserHeadImage = "default";
     private RankInfoReceiver rankInfoReceiver;
     private IntentFilter intentFilter;
-    static boolean bar_Action = true;
-    public static Game_F Now_Fragmet;
-    ImageView headImage;
-    Uri imageUri; //图片路径
-    File imageFile; //图片文件
-    String imagePath;
-    Bitmap bitmapdown;
-    TextView username_view;
-    final static int CAMERA = 1;
-    final static int ICON = 2;
-    final static int CAMERAPRESS = 3;
-    final static int ICONPRESS = 4;
-    BackgroundSound backgroundSound;
+    private CameraOps cameraOps = new CameraOps();
+    private ImageView headImage;
+    private Uri imageUri; //图片路径
+    private File imageFile; //图片文件
+    private String imagePath;
+    private Bitmap bitmapdown;
+    private TextView username_view;
+    private final static int CAMERA = 1;
+    private final static int ICON = 2;
+    private final static int CAMERAPRESS = 3;
+    private final static int ICONPRESS = 4;
+    private int background_music=1;
+    private BackgroundSound backgroundSound;
 
-    static public Game_F getNow_Fragmet() {
-        return Now_Fragmet;
+    @Override
+    protected void onDestroy() {
+        backgroundSound.onDestroy();
+        backgroundSound = null;
+        super.onDestroy();
+        unregisterReceiver(rankInfoReceiver);
     }
 
-    static public void setBar_Action(boolean _bar_Action) {
-        bar_Action = _bar_Action;
+    @Override
+    protected void onResume() {
+        super.onResume();
+        bar_Action = true;
     }
 
     @Override
@@ -173,18 +179,6 @@ public class MainActivity extends AppCompatActivity
         buildRegisterRank(); //注册广播
     }
 
-    private Bitmap clip_image(Bitmap bitmap, float target_W, float target_H) {
-        int width = bitmap.getWidth();
-        int height = bitmap.getHeight();
-
-        float scaleWidth = target_W / width;
-        float scaleHeight = target_H / height;
-        Log.d(TAG, "clip_image: " + scaleWidth + " " + scaleHeight);
-        Matrix matrix = new Matrix();
-        matrix.postScale(scaleWidth, scaleHeight);
-        return Bitmap.createBitmap(bitmap, 0, 0, width, height, matrix, true);
-    }
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -194,8 +188,10 @@ public class MainActivity extends AppCompatActivity
                 Bitmap bitmap1 = null;
                 try {
                     bitmap1 = BitmapFactory.decodeStream(getContentResolver().openInputStream(imageUri));
-                    imagePath = getPath(this, imageUri);
-                    Bitmap bitmapdown = clip_image(bitmap1, (float) 192, (float) 192);
+                    if (bitmap1 == null)
+                        break;
+                    imagePath = cameraOps.getPath(this, imageUri);
+                    Bitmap bitmapdown = cameraOps.clip_image(bitmap1, (float) 192, (float) 192);
                     headImage.setImageBitmap(bitmapdown);
                     saveUserInformation(Username, imagePath);
                 } catch (FileNotFoundException e) {
@@ -207,11 +203,11 @@ public class MainActivity extends AppCompatActivity
             case ICON:
                 DisplayMetrics metric = new DisplayMetrics();
                 getWindowManager().getDefaultDisplay().getMetrics(metric);
-                String dst = getPath(this, data.getData());
+                String dst = cameraOps.getPath(this, data.getData());
                 Log.d(TAG, "onActivityResult: dst: " + dst);
                 imageFile = new File(dst);
                 imagePath = dst;
-                Bitmap bitmap = ThumbnailUtils.extractThumbnail(getBitmapFromFile(imageFile), 192, 192);
+                Bitmap bitmap = ThumbnailUtils.extractThumbnail(cameraOps.getBitmapFromFile(imageFile), 192, 192);
                 bitmapdown = bitmap;
                 headImage.setImageBitmap(bitmapdown);
                 saveUserInformation(Username, dst);
@@ -220,19 +216,429 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    public Bitmap getBitmapFromFile(File dst) {
-        if (null != dst && dst.exists()) {
-            BitmapFactory.Options opts = new BitmapFactory.Options();
-            //opts.inJustDecodeBounds = false;
-            opts.inSampleSize = 2;
+    @Override
+    public void onBackPressed() {
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        if (drawer.isDrawerOpen(GravityCompat.START)) {
+            drawer.closeDrawer(GravityCompat.START);
+        } else {
+            super.onBackPressed();
+        }
+    }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+        if (!bar_Action)
+            return true;
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.sub_difficulty_1) {
+            Now_Fragmet.mode = 1;
+            Now_Fragmet.initView();
+            return true;
+        }
+        if (id == R.id.sub_difficulty_2) {
+            Now_Fragmet.mode = 2;
+            Now_Fragmet.initView();
+            return true;
+        }
+        if (id == R.id.sub_difficulty_3) {
+            Now_Fragmet.mode = 3;
+            Now_Fragmet.initView();
+            return true;
+        }
+        if (id == R.id.sub_number_1) {
+            Now_Fragmet.degree = 10;
+            Now_Fragmet.initGame(true);
+            return true;
+        }
+        if (id == R.id.sub_number_2) {
+            Now_Fragmet.degree = 15;
+            Now_Fragmet.initGame(true);
+            return true;
+        }
+        if (id == R.id.sub_number_3) {
+            Now_Fragmet.degree = 25;
+            Now_Fragmet.initGame(true);
+            return true;
+        }
+
+        if (id == R.id.action_flush) {
+            Now_Fragmet.fab.performClick();
+            return true;
+        }
+
+        if (id == R.id.action_review) {
+            Now_Fragmet.initView();
+            return true;
+        }
+
+        if (id == R.id.background_music_open) {
+            start_background_Sound();
+        }
+        if (id == R.id.background_music_close) {
+            stop_background_Sound();
+        }
+        if (id == R.id.click_music_open) {
+            open_click_sound();
+        }
+        if (id == R.id.click_music_close) {
+            close_click_sound();
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        switch (requestCode) {
+            case CAMERAPRESS:
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
+                    //获取到了权限
+                    startCamera();
+                } else {
+                    Toast.makeText(this, "对不起你没有同意该权限", Toast.LENGTH_LONG).show();
+                }
+                break;
+
+            case ICONPRESS:
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
+                    //获取到了权限
+                    startIcon();
+                } else {
+                    Toast.makeText(this, "对不起你没有同意该权限", Toast.LENGTH_LONG).show();
+                }
+                break;
+
+        }
+
+
+    }
+
+    @SuppressWarnings("StatementWithEmptyBody")
+    @Override
+    public boolean onNavigationItemSelected(MenuItem item) {
+        // Handle navigation view item clicks here.
+        int id = item.getItemId();
+
+        if (id == R.id.nav_camera) {
+            // Handle the camera action
+        } else if (id == R.id.nav_rename) {
+            final EditText inputServer = new EditText(MainActivity.this);
+            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+            builder.setTitle("输入新名称").setView(inputServer)
+                    .setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+                        }
+                    })
+                    .setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            String text = inputServer.getText().toString();
+                            set_new_name(text);
+                        }
+                    }).show();
+        } else if (id == R.id.nav_rank) {
+            rankInfoReceiver.getActivityRank(Now_Fragmet.getMode(), Now_Fragmet.getDegree());
+        } else if (id == R.id.nav_manage) {
+
+        } else if (id == R.id.nav_share) {
+
+        } else if (id == R.id.nav_send) {
+
+        } else if (id == R.id.nav_about) {
+            Intent intent = new Intent(MainActivity.this, CopyRight.class);
+            startActivity(intent);
+        }
+
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        drawer.closeDrawer(GravityCompat.START);
+        return true;
+    }
+
+    // 声音控制
+    private void stop_background_Sound() {
+        if (background_music == 1){ //如果目前正在播放背景音乐就执行
+            SharedPreferences.Editor editor = getSharedPreferences(Username,
+                    MODE_PRIVATE).edit();//获得sharedPreferences的编辑器
+            editor.putInt("background_music", 0); //数据存储
+            editor.apply();
+            background_music = 0; //设置背景音乐状态为未播放
+            backgroundSound._release_background_sound(); //停止背景音乐
+        }
+
+    }
+
+    private void start_background_Sound() {
+        if (background_music == 0){
+            SharedPreferences.Editor editor = getSharedPreferences(Username,
+                    MODE_PRIVATE).edit();
+            editor.putInt("background_music", 1);
+            editor.apply();
+            background_music = 1;
+            backgroundSound._create_background_sound();
+        }
+    }
+
+    private void close_click_sound() {
+        SharedPreferences.Editor editor = getSharedPreferences(Username,
+                MODE_PRIVATE).edit();
+        editor.putInt("click_music", 0);
+        editor.apply();
+        Now_Fragmet.setClick_music(0);
+    }
+
+    private void open_click_sound() {
+        SharedPreferences.Editor editor = getSharedPreferences(Username,
+                MODE_PRIVATE).edit();
+        editor.putInt("click_music", 1);
+        editor.apply();
+        Now_Fragmet.setClick_music(1);
+    }
+
+    // 头像和名字控制
+    public void startCamera() {
+        File path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
+        imageFile = new File(path, "heard_" + Username + ".png");
+        try {
+            if (imageFile.exists()) {
+                imageFile.delete();
+            }
+            imageFile.createNewFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        //将File对象转换为Uri并启动照相程序
+        imageUri = Uri.fromFile(imageFile);
+        Intent intent = new Intent("android.media.action.IMAGE_CAPTURE"); //照相
+        intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri); //指定图片输出地址
+        startActivityForResult(intent, CAMERA); //启动照相
+    }
+
+    public void startIcon() {
+        Intent intent1 = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        intent1.setDataAndType(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/*");
+        startActivityForResult(intent1, ICON);
+    }
+
+    private void setUserHeadImage() {
+        Log.d(TAG, "setUserHeadImage: UserHeadImage: " + UserHeadImage);
+        if (!UserHeadImage.equals("default")) {
+            Bitmap bitmap = BitmapFactory.decodeFile(UserHeadImage);
+            Log.d(TAG, "setUserHeadImage: bitmap: " + bitmap);
+            headImage.setImageBitmap(cameraOps.clip_image(bitmap, (float) 192, (float) 192));
+        }
+
+    }
+
+    private void set_new_name(String name){
+        SharedPreferences preferences = getSharedPreferences(Username, MODE_PRIVATE);
+        int background_music = preferences.getInt("background_music", 1);
+        int click_music = preferences.getInt("click_music", 1);
+        GetUserInformation();
+        Username = name;
+
+        saveUserInformation(Username, UserHeadImage);
+        SharedPreferences.Editor editor = getSharedPreferences(Username,
+                MODE_PRIVATE).edit();
+        editor.putInt("click_music", click_music);
+        editor.putInt("background_music", background_music);
+        editor.apply();
+        username_view.setText(Username);
+    }
+
+    //用户喜好设置
+    private void GetUserInformation() {
+        FileInputStream in = null;
+        BufferedReader reader = null;
+        try {
+            in = openFileInput("USERINFOMATION");
+            reader = new BufferedReader(new InputStreamReader(in));
+            String line = "";
+            int i = 1;
+            while ((line = reader.readLine()) != null) {
+                if (i == 1) {
+                    Username = line;
+                } else {
+                    UserHeadImage = line;
+                }
+                i += 1;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+    }
+
+    //保存用户的头像和名字信息
+    private void saveUserInformation(String name, String string_dir) {
+        FileOutputStream outputStream = null;  // 输出流
+        BufferedWriter writer = null;  //缓冲写入
+        try {
+            outputStream = openFileOutput("USERINFOMATION", Context.MODE_PRIVATE); //获取文件
+            writer = new BufferedWriter(new OutputStreamWriter(outputStream));
+            writer.write(name); //写入信息
+            writer.newLine(); // 新建一行
+            writer.write(string_dir);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
             try {
-                return BitmapFactory.decodeFile(dst.getPath(), opts);
-            } catch (OutOfMemoryError e) {
+                if (writer != null) {
+                    writer.close(); // 关闭缓冲区
+                }
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         }
-        return null;
+    }
+
+    private void setPrefenence() {
+        SharedPreferences preferences = getSharedPreferences(Username, MODE_PRIVATE);
+        background_music = preferences.getInt("background_music", 1);
+        if (background_music == 1) {
+            backgroundSound._create_background_sound();
+        }
+        int click_music = preferences.getInt("click_music", 1);
+        Now_Fragmet.setClick_music(click_music);
+    }
+
+    //fragment相关
+    static public Game_F getNow_Fragmet() {
+        return Now_Fragmet;
+    }
+
+    static public void setBar_Action(boolean _bar_Action) {
+        bar_Action = _bar_Action;
+    }
+
+    private void replaceFragment(Fragment fragment) {
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentTransaction transaction = fragmentManager.beginTransaction();
+        transaction.replace(R.id.frame_layout, fragment);
+        transaction.commit();
+    }
+
+    private void buildRegisterRank() {
+        //注册广播
+        intentFilter = new IntentFilter();
+        intentFilter.addAction("com.example.broadcast.RANK_INFOMATION");
+        rankInfoReceiver = new RankInfoReceiver();
+        registerReceiver(rankInfoReceiver, intentFilter);
+    }
+
+    class RankInfoReceiver extends BroadcastReceiver {
+        private Database_RANK dbHelper;
+
+        public RankInfoReceiver() {
+            super();
+            dbHelper = new Database_RANK(getApplicationContext(), "RankInfo.db", null, 2);
+            dbHelper.getWritableDatabase();
+        }
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.d(TAG, "onReceive: receive broadcast succeefully");
+            SQLiteDatabase db = dbHelper.getWritableDatabase();  // 获取SQLite数据库
+            ContentValues values = new ContentValues();  //编辑存入的数据
+            final int degreeDifficult = intent.getIntExtra("degreeDifficult", 0);
+            final int numberBlock = intent.getIntExtra("numberBlock", 0);
+            values.put("playerName", Username);
+            values.put("costTime", intent.getDoubleExtra("costTime", 0.0));
+            values.put("inputTime", getTimeNow());
+            values.put("degreeDifficult", degreeDifficult);
+            values.put("numberBlock", numberBlock);
+            db.insert("RANK", null, values); // 插入数据
+            DialogUIUtils.showMdAlert(MainActivity.this, "Good Job",
+                    "恭喜你完成了游戏，是否查看排行榜", new DialogUIListener() {
+                        @Override
+                        public void onPositive() {
+                            Now_Fragmet.initView(); //重置画面
+                            getActivityRank(degreeDifficult, numberBlock);
+                        }
+
+                        @Override
+                        public void onCancle() {
+                            Now_Fragmet.initView();
+                        }
+
+                        @Override
+                        public void onNegative() {
+                            Now_Fragmet.initView();
+                        }
+
+                    }).show();
+
+        }
+
+        public void getActivityRank(int degreeDifficult, int numberBlock) {
+            bar_Action = false;
+            Fragment fragment_rank = new Rank_F();
+            ((Rank_F) fragment_rank).setDegreeDifficult(degreeDifficult);
+            ((Rank_F) fragment_rank).setNumberBlock(numberBlock);
+            replaceFragment(fragment_rank);
+        }
+
+        String getTimeNow() {
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+            Date curDate = new Date(System.currentTimeMillis());//获取当前时间
+            return formatter.format(curDate);
+        }
+    }
+}
+
+class CameraOps{
+    /**
+     * //     * @param uri The Uri to check.
+     * //     * @return Whether the Uri authority is ExternalStorageProvider.
+     * //
+     */
+    public static boolean isExternalStorageDocument(Uri uri) {
+        return "com.android.externalstorage.documents".equals(uri.getAuthority());
+    }
+
+    /**
+     * @param uri The Uri to check.
+     * @return Whether the Uri authority is DownloadsProvider.
+     */
+    public static boolean isDownloadsDocument(Uri uri) {
+        return "com.android.providers.downloads.documents".equals(uri.getAuthority());
+    }
+
+    /**
+     * @param uri The Uri to check.
+     * @return Whether the Uri authority is MediaProvider.
+     */
+    public static boolean isMediaDocument(Uri uri) {
+        return "com.android.providers.media.documents".equals(uri.getAuthority());
+    }
+
+    /**
+     * @param uri The Uri to check.
+     * @return Whether the Uri authority is Google Photos.
+     */
+    public static boolean isGooglePhotosUri(Uri uri) {
+        return "com.google.android.apps.photos.content".equals(uri.getAuthority());
     }
 
     public static String getPath(final Context context, final Uri uri) {
@@ -324,413 +730,37 @@ public class MainActivity extends AppCompatActivity
         return null;
     }
 
-    public void startCamera() {
-        File path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
-        imageFile = new File(path, "heard_" + Username + ".png");
-        try {
-            if (imageFile.exists()) {
-                imageFile.delete();
-            }
-            imageFile.createNewFile();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        //将File对象转换为Uri并启动照相程序
-        imageUri = Uri.fromFile(imageFile);
-        Intent intent = new Intent("android.media.action.IMAGE_CAPTURE"); //照相
-        intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri); //指定图片输出地址
-        startActivityForResult(intent, CAMERA); //启动照相
-    }
+    public Bitmap getBitmapFromFile(File dst) {
+        if (null != dst && dst.exists()) {
+            BitmapFactory.Options opts = new BitmapFactory.Options();
+            //opts.inJustDecodeBounds = false;
+            opts.inSampleSize = 2;
 
-    public void startIcon() {
-        Intent intent1 = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-        intent1.setDataAndType(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/*");
-        startActivityForResult(intent1, ICON);
-    }
-
-    private void GetUserInformation() {
-        FileInputStream in = null;
-        BufferedReader reader = null;
-        try {
-            in = openFileInput("USERINFOMATION");
-            reader = new BufferedReader(new InputStreamReader(in));
-            String line = "";
-            int i = 1;
-            while ((line = reader.readLine()) != null) {
-                if (i == 1) {
-                    Username = line;
-                } else {
-                    UserHeadImage = line;
-                }
-                i += 1;
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (reader != null) {
-                try {
-                    reader.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-
-    }
-
-    private void saveUserInformation(String name, String string_dir) {
-        FileOutputStream outputStream = null;
-        BufferedWriter writer = null;
-        try {
-            outputStream = openFileOutput("USERINFOMATION", Context.MODE_PRIVATE);
-            writer = new BufferedWriter(new OutputStreamWriter(outputStream));
-            writer.write(name);
-            writer.newLine();
-            writer.write(string_dir);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
             try {
-                if (writer != null) {
-                    writer.close();
-                }
-            } catch (IOException e) {
+                return BitmapFactory.decodeFile(dst.getPath(), opts);
+            } catch (OutOfMemoryError e) {
                 e.printStackTrace();
             }
         }
+        return null;
     }
 
-    private void setUserHeadImage() {
-        if (UserHeadImage != null) {
-            Bitmap bitmap = BitmapFactory.decodeFile(UserHeadImage);
-            Log.d(TAG, "setUserHeadImage: bitmap: " + bitmap);
-            headImage.setImageBitmap(clip_image(bitmap, (float) 192, (float) 192));
-        }
+    public Bitmap clip_image(Bitmap bitmap, float target_W, float target_H) {
+        int width = bitmap.getWidth();
+        int height = bitmap.getHeight();
 
-    }
-
-    private void setPrefenence() {
-        SharedPreferences preferences = getSharedPreferences(Username, MODE_PRIVATE);
-        int background_music = preferences.getInt("background_music", 1);
-        if (background_music == 1) {
-            backgroundSound._create_background_sound();
-        }
-        int click_music = preferences.getInt("click_music", 1);
-        Now_Fragmet.setClick_music(click_music);
-    }
-
-    private void buildRegisterRank() {
-        intentFilter = new IntentFilter();
-        intentFilter.addAction("com.example.broadcast.RANK_INFOMATION");
-        rankInfoReceiver = new RankInfoReceiver();
-        registerReceiver(rankInfoReceiver, intentFilter);
-    }
-
-    @Override
-    public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
-        } else {
-            super.onBackPressed();
-        }
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-        if (!bar_Action)
-            return true;
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.sub_difficulty_1) {
-            Now_Fragmet.mode = 1;
-            Now_Fragmet.initView();
-            return true;
-        }
-        if (id == R.id.sub_difficulty_2) {
-            Now_Fragmet.mode = 2;
-            Now_Fragmet.initView();
-            return true;
-        }
-        if (id == R.id.sub_difficulty_3) {
-            Now_Fragmet.mode = 3;
-            Now_Fragmet.initView();
-            return true;
-        }
-        if (id == R.id.sub_number_1) {
-            Now_Fragmet.degree = 10;
-            Now_Fragmet.initGame(true);
-            return true;
-        }
-        if (id == R.id.sub_number_2) {
-            Now_Fragmet.degree = 15;
-            Now_Fragmet.initGame(true);
-            return true;
-        }
-        if (id == R.id.sub_number_3) {
-            Now_Fragmet.degree = 25;
-            Now_Fragmet.initGame(true);
-            return true;
-        }
-
-        if (id == R.id.action_flush) {
-            Now_Fragmet.fab.performClick();
-            return true;
-        }
-
-        if (id == R.id.action_review) {
-            Now_Fragmet.initView();
-            return true;
-        }
-
-        if (id == R.id.background_music_open) {
-            start_background_Sound();
-        }
-        if (id == R.id.background_music_close) {
-            stop_background_Sound();
-        }
-        if (id == R.id.click_music_open) {
-            open_click_sound();
-        }
-        if (id == R.id.click_music_close) {
-            close_click_sound();
-        }
-        return super.onOptionsItemSelected(item);
-    }
-
-    @SuppressWarnings("StatementWithEmptyBody")
-    @Override
-    public boolean onNavigationItemSelected(MenuItem item) {
-        // Handle navigation view item clicks here.
-        int id = item.getItemId();
-
-        if (id == R.id.nav_camera) {
-            // Handle the camera action
-        } else if (id == R.id.nav_rename) {
-            final EditText inputServer = new EditText(MainActivity.this);
-            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-            builder.setTitle("输入新名称").setView(inputServer)
-                    .setNegativeButton("取消", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            dialog.dismiss();
-                        }
-                    })
-                    .setPositiveButton("确定", new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int which) {
-                            String text = inputServer.getText().toString();
-                            set_new_name(text);
-                        }
-                    }).show();
-        } else if (id == R.id.nav_rank) {
-            rankInfoReceiver.getActivityRank(Now_Fragmet.getMode(), Now_Fragmet.getDegree());
-        } else if (id == R.id.nav_manage) {
-
-        } else if (id == R.id.nav_share) {
-
-        } else if (id == R.id.nav_send) {
-
-        } else if (id == R.id.nav_about) {
-            Intent intent = new Intent(MainActivity.this, CopyRight.class);
-            startActivity(intent);
-        }
-
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
-        return true;
-    }
-
-    private void set_new_name(String name){
-        SharedPreferences preferences = getSharedPreferences(Username, MODE_PRIVATE);
-        int background_music = preferences.getInt("background_music", 1);
-        int click_music = preferences.getInt("click_music", 1);
-        GetUserInformation();
-        Username = name;
-        saveUserInformation(Username, UserHeadImage);
-        SharedPreferences.Editor editor = getSharedPreferences(Username,
-                MODE_PRIVATE).edit();
-        editor.putInt("click_music", click_music);
-        editor.putInt("background_music", background_music);
-        editor.apply();
-        username_view.setText(Username);
-    }
-
-    private void stop_background_Sound() {
-        SharedPreferences.Editor editor = getSharedPreferences(Username,
-                MODE_PRIVATE).edit();
-        editor.putInt("background_music", 0);
-        editor.apply();
-        backgroundSound._release_background_sound();
-    }
-
-    private void start_background_Sound() {
-        SharedPreferences.Editor editor = getSharedPreferences(Username,
-                MODE_PRIVATE).edit();
-        editor.putInt("background_music", 1);
-        editor.apply();
-        backgroundSound._create_background_sound();
-    }
-
-    private void close_click_sound() {
-        SharedPreferences.Editor editor = getSharedPreferences(Username,
-                MODE_PRIVATE).edit();
-        editor.putInt("click_music", 0);
-        editor.apply();
-        Now_Fragmet.setClick_music(0);
-    }
-
-    private void open_click_sound() {
-        SharedPreferences.Editor editor = getSharedPreferences(Username,
-                MODE_PRIVATE).edit();
-        editor.putInt("click_music", 1);
-        editor.apply();
-        Now_Fragmet.setClick_music(1);
-    }
-
-    @Override
-    protected void onDestroy() {
-        backgroundSound.onDestroy();
-        backgroundSound = null;
-        super.onDestroy();
-        unregisterReceiver(rankInfoReceiver);
-    }
-
-    private void replaceFragment(Fragment fragment) {
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        FragmentTransaction transaction = fragmentManager.beginTransaction();
-        transaction.replace(R.id.frame_layout, fragment);
-        transaction.commit();
-    }
-
-    /**
-     * //     * @param uri The Uri to check.
-     * //     * @return Whether the Uri authority is ExternalStorageProvider.
-     * //
-     */
-    public static boolean isExternalStorageDocument(Uri uri) {
-        return "com.android.externalstorage.documents".equals(uri.getAuthority());
-    }
-
-    /**
-     * @param uri The Uri to check.
-     * @return Whether the Uri authority is DownloadsProvider.
-     */
-    public static boolean isDownloadsDocument(Uri uri) {
-        return "com.android.providers.downloads.documents".equals(uri.getAuthority());
-    }
-
-    /**
-     * @param uri The Uri to check.
-     * @return Whether the Uri authority is MediaProvider.
-     */
-    public static boolean isMediaDocument(Uri uri) {
-        return "com.android.providers.media.documents".equals(uri.getAuthority());
-    }
-
-    /**
-     * @param uri The Uri to check.
-     * @return Whether the Uri authority is Google Photos.
-     */
-    public static boolean isGooglePhotosUri(Uri uri) {
-        return "com.google.android.apps.photos.content".equals(uri.getAuthority());
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        switch (requestCode) {
-            case CAMERAPRESS:
-                if (grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
-                    //获取到了权限
-                    startCamera();
-                } else {
-                    Toast.makeText(this, "对不起你没有同意该权限", Toast.LENGTH_LONG).show();
-                }
-                break;
-
-            case ICONPRESS:
-                if (grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
-                    //获取到了权限
-                    startIcon();
-                } else {
-                    Toast.makeText(this, "对不起你没有同意该权限", Toast.LENGTH_LONG).show();
-                }
-                break;
-
-        }
-
-
-    }
-
-    class RankInfoReceiver extends BroadcastReceiver {
-        private Database_RANK dbHelper;
-
-        public RankInfoReceiver() {
-            super();
-            dbHelper = new Database_RANK(getApplicationContext(), "RankInfo.db", null, 2);
-            dbHelper.getWritableDatabase();
-        }
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            SQLiteDatabase db = dbHelper.getWritableDatabase();
-            ContentValues values = new ContentValues();
-            final int degreeDifficult = intent.getIntExtra("degreeDifficult", 0);
-            final int numberBlock = intent.getIntExtra("numberBlock", 0);
-            values.put("playerName", intent.getStringExtra("playerName"));
-            values.put("costTime", intent.getDoubleExtra("costTime", 0.0));
-            values.put("inputTime", getTimeNow());
-            values.put("degreeDifficult", degreeDifficult);
-            values.put("numberBlock", numberBlock);
-            db.insert("RANK", null, values);
-            DialogUIUtils.showMdAlert(MainActivity.this, "Good Job",
-                    "恭喜你完成了游戏，是否查看排行榜", new DialogUIListener() {
-                        @Override
-                        public void onPositive() {
-                            Now_Fragmet.initView(); //重置画面
-                            getActivityRank(degreeDifficult, numberBlock);
-                        }
-
-                        @Override
-                        public void onNegative() {
-                            Now_Fragmet.initView();
-                        }
-
-                    }).show();
-//            getActivityRank(degreeDifficult, numberBlock);
-
-        }
-
-        public void getActivityRank(int degreeDifficult, int numberBlock) {
-            bar_Action = false;
-            Fragment fragment_rank = new Rank_F();
-            ((Rank_F) fragment_rank).setDegreeDifficult(degreeDifficult);
-            ((Rank_F) fragment_rank).setNumberBlock(numberBlock);
-            replaceFragment(fragment_rank);
-        }
-
-        String getTimeNow() {
-            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
-            Date curDate = new Date(System.currentTimeMillis());//获取当前时间
-            return formatter.format(curDate);
-        }
+        float scaleWidth = target_W / width;
+        float scaleHeight = target_H / height;
+        Matrix matrix = new Matrix();
+        matrix.postScale(scaleWidth, scaleHeight);
+        return Bitmap.createBitmap(bitmap, 0, 0, width, height, matrix, true);
     }
 }
 
 class BackgroundSound {
     private static MediaPlayer mp = null;// 声明一个MediaPlayer对象
-
+    private Context context;
+    private int rawID;
     public void playBGSound() {
         mp.start();// 开始播放
         // 为MediaPlayer添加播放完事件监听器
@@ -756,6 +786,10 @@ class BackgroundSound {
     }
 
     void _create_background_sound() {
+        if (mp != null) {
+            mp.release();// 释放资源
+        }
+        mp = MediaPlayer.create(context, rawID);
         thread = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -777,9 +811,8 @@ class BackgroundSound {
     }
 
     BackgroundSound(Context context, int rawID) {
-        if (mp != null) {
-            mp.release();// 释放资源
-        }
-        mp = MediaPlayer.create(context, R.raw.merry_christmas);
+        this.context = context;
+        this.rawID = rawID;
+
     }
 }

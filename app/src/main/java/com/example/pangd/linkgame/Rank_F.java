@@ -8,6 +8,7 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,6 +26,7 @@ public class Rank_F extends Fragment {
     private Database_RANK dbHelper;
     private int numberBlock;
     private List<RankItem> blockList = new ArrayList<>();
+    private static final String TAG = "Rank_F";
 
     public void setDegreeDifficult(int degreeDifficult) {
         this.degreeDifficult = degreeDifficult;
@@ -60,22 +62,23 @@ public class Rank_F extends Fragment {
     }
 
     private void getRankInfo(){
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        SQLiteDatabase db = dbHelper.getWritableDatabase(); // 获取数据库的操作类
         Cursor cursor = db.query("RANK", null, "degreeDifficult=? and numberBlock=?",
                 new String[]{Integer.toString(degreeDifficult), Integer.toString(numberBlock)},
                 null, null, "costTime asc");
-
+        //查询满足的信息（获取相同难度的排行榜），按时间升序排列
         int rank_number_auto = 1;
         if(cursor.moveToFirst()){
             do{
                 String rank_number = Integer.toString(rank_number_auto);
                 String cost_time = Double.toString(cursor.getDouble(cursor.getColumnIndex("costTime")));
+                Log.d(TAG, "getRankInfo: 1" + cost_time);
                 String player_name = cursor.getString(cursor.getColumnIndex("playerName"));
                 String input_time = cursor.getString(cursor.getColumnIndex("inputTime"));
                 rank_number_auto += 1;
-                RankItem rankItem = new RankItem(rank_number, cost_time, player_name, input_time);
+                RankItem rankItem = new RankItem(rank_number, cost_time + "s", player_name, input_time);
                 blockList.add(rankItem);
-            }while (cursor.moveToNext() && rank_number_auto<=40);
+            }while (cursor.moveToNext() && rank_number_auto<=40);  // 默认只获取前40名
         }
     }
 

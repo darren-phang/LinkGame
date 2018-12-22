@@ -33,26 +33,26 @@ import java.util.TimerTask;
 
 
 public class Game_F extends Fragment {
-    private NewGame game;
-    private Board board = new Board();
-    private List<Item> blockList = new ArrayList<>();
-    private int[] shape;
-    private BlockAdapter adapter;
-    public int degree = 25;
-    public int mode = 3;
-    public int flush = 3;
-    final private int allTime = 1200;
-    private int allTime_Temp;
-    static private Timer timer;
-    public Button fab;
-    RecyclerView recyclerView;
-    StaggeredGridLayoutManager layoutManager;
-    ProgressBar progressBar;
-    Button startButton;
-    boolean IsStart = false;
-    SoundPoolUtil sound;
+    private NewGame game;  //定义关于游戏参数设置和生成游戏的类
+    private Board board = new Board(); //定义一个关于连连看操作的类
+    private List<Item> blockList = new ArrayList<>();//定义适配器的list
+    private int[] shape; //连连看规模
+    private BlockAdapter adapter; //适配器
+    public int degree = 25;//连连看有多少种动物
+    public int mode = 3;//哪种棋盘大小
+    public int flush = 3; //剩余刷新次数
+    final private int allTime = 1200;//全部的时间
+    private int allTime_Temp; //剩余时间
+    static private Timer timer;//定时器
+    public Button fab; //刷新按钮
+    boolean IsStart = false;//是否已经开始游戏
+    RecyclerView recyclerView; //recyclerview界面
+    StaggeredGridLayoutManager layoutManager;//界面管理器
+    ProgressBar progressBar; //进度条
+    Button startButton;//开始按钮
+    SoundPoolUtil sound;//管理声音的类
     private static final String TAG = "Game_F";
-    int click_music = 1;
+    int click_music = 1;//是否有点击音效
 
     public int getClick_music() {
         return click_music;
@@ -140,17 +140,13 @@ public class Game_F extends Fragment {
                                 "在来一局", new DialogUIListener() {
                                     @Override
                                     public void onPositive() {
-                                        initView(); //重置画面
                                     }
 
                                     @Override
                                     public void onNegative() {
                                     }
                                 }).show();
-//                        Toast.makeText(getActivity(), "loss", Toast.LENGTH_LONG).show();
                         initView();
-//                        Intent intent = new Intent(getActivity(), EndGame.class);
-//                        startActivity(intent);
                     }
             }
             return false;
@@ -241,11 +237,8 @@ public class Game_F extends Fragment {
                             sound.play(sound.LINK, click_music);    //消除
                             if (_info.length == 5) {
                                 sound.play(sound.WIN, click_music);   //获胜
-                                sendRankBroadcast("defaultUser", (double)(allTime-allTime_Temp)/10);
-//                                Intent intent = new Intent("com.example.broadcast.RANK_INFOMATION");
-//                                getActivity().sendBroadcast(intent);
-//                                Toast.makeText(getActivity(), "Win", Toast.LENGTH_LONG).show();
-//                                initView();
+                                stopTimer();
+                                sendRankBroadcast((double)(allTime-allTime_Temp)/10);
                             }
                         }
                     }
@@ -261,10 +254,10 @@ public class Game_F extends Fragment {
         IsStart = false;
     }
 
-    private void sendRankBroadcast(String name, double costTime){
+    private void sendRankBroadcast(double costTime){
         // 名字、耗时、上榜时间
+        Log.d(TAG, "sendRankBroadcast: send broadcast succeefully");
         Intent intent = new Intent("com.example.broadcast.RANK_INFOMATION");
-        intent.putExtra("playerName", name);
         intent.putExtra("costTime", costTime);
         intent.putExtra("degreeDifficult", mode);
         intent.putExtra("numberBlock", degree);
@@ -280,8 +273,8 @@ public class Game_F extends Fragment {
 class SoundPoolUtil {
     private static SoundPoolUtil soundPoolUtil;
     private SoundPool soundPool;
-    public int START=1;
-    public int WIN=2;
+    public int START=1;  //开始音效
+    public int WIN=2;    //获胜音效
     public int LOSS=3;
     public int LINK=4;
     public int FLUSH=5;
@@ -296,7 +289,7 @@ class SoundPoolUtil {
 
     private SoundPoolUtil(Context context) {
         soundPool = new SoundPool.Builder()
-                    .setMaxStreams(10)
+                    .setMaxStreams(10)   //可同时播放声音数量
                     .build();
         //加载音频文件
         soundPool.load(context, R.raw.start, 1);
@@ -309,10 +302,10 @@ class SoundPoolUtil {
     }
 
     public void play(int number, int Isopen) {
-        Log.d("tag", "number " + number);
         //播放音频
         if (Isopen == 1){
             soundPool.play(number, 1, 1, 0, 0, 1);
+            //左右声道相同，优先级最低，不循环播放，速率正常
         }
     }
 

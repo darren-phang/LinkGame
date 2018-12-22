@@ -8,19 +8,20 @@ import java.util.Random;
 
 public class NewGame {
     private static final String TAG = "NewGame";
-    private int row;
+    private int row; //多少行
 
-    private int col;
+    private int col; //多少列
 
-    private List<Integer> nullLocation = new ArrayList<>();
+    private List<Integer> nullLocation = new ArrayList<>();  //还没有分配图片的位置
 
-    private int all_Number;
+    private int all_Number;   //方块的总数
 
-    private int TypeNumber;
+    private int TypeNumber;   //类别总数
 
-    private int[][] GameInfo;
+    private int[][] GameInfo;  //代表连连看界面，每一个单元代表一种状态，被消除（Board.nullType）
+    // 或没被消除（数字代表它的类别）
 
-    private int turn;
+    private int turn;  //定义折多少次内能消除
 
     public NewGame(int row, int col, int typeNumber, int turn){
         this.row = row;
@@ -36,17 +37,21 @@ public class NewGame {
         return turn;
     }
 
+    // 初始化位置信息
     private void initLocation() {
+        //添加可以添加图片的有效区域
         for (int i = 1; i < row - 1; i++) {
             for (int j = 1; j < col - 1; j++) {
                 nullLocation.add(i * col + j);
             }
         }
+        //每次随机选取两个不同的位置，初始化为一个随机的类别
         for (int i = 0; i < (row - 2) * (col - 2) / 2; i++) {
             int[] InfoRandom = getLocationAndType_Random();
             GameInfo[InfoRandom[1]][InfoRandom[2]] = InfoRandom[0];
             GameInfo[InfoRandom[3]][InfoRandom[4]] = InfoRandom[0];
         }
+        // 定义界面四周的区域为无效
         for (int i = 0; i < col; i++) {
             GameInfo[0][i] = Board.nullType;
             GameInfo[row - 1][i] = Board.nullType;

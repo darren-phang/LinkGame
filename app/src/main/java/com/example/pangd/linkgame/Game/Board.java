@@ -12,25 +12,25 @@ import java.util.Random;
 public class Board {
     private static final String TAG = "Board";
 
-    private int[][] TypeBlock;
+    private int[][] TypeBlock;  //连连看当前信息
 
-    static Queue<_Location> location_queue = new LinkedList<_Location>();
+    static Queue<_Location> location_queue = new LinkedList<_Location>();  //寻径时的队列
 
-    static public int nullType = 1314;
+    static public int nullType = 1314;   //界面中代表已被消除或着无效的点
 
-    private NewGame Game;
+    private NewGame Game;  //游戏参数类
 
-    private int clickNumber = 0;
+    private int clickNumber = 0;  //有效点击次数
 
-    private int position_temp;
+    private int position_temp;  //第一次点击位置的缓存区
 
-    private int allBlock;
+    private int allBlock;  //所有的带消除的方块
 
-    private int Type_temp;
+    private int Type_temp;  //第一次点击的类别的缓存区
 
-    private int max_turn;
+    private int max_turn;  //最大允许转几次弯
 
-    private int[] Location = new int[4];
+    private int[] Location = new int[4];  //两次有效的点击的位置信息
 
     public Board() {
     }
@@ -103,46 +103,48 @@ public class Board {
     }
 
     private void _isArrive(int x, int y, int not_go, int have_turn) {
-        // not_go 上下左右 1,2,link,4
+        // not_go 上下左右 1,2,3,4
         // not_go 就是上次从那个方向来的
-        int[] offset = new int[]{-Game.getCol(), Game.getCol(), -1, 1};
+        int[] offset = new int[]{-Game.getCol(), Game.getCol(), -1, 1}; //要调整位置信息
         int[] go = new int[]{2, 1, 4, 3};
         int position = X_YToPosition(x, y);
         for (int i = 0; i < 4; i++) {
-            int positionNow = position + offset[i];
+            int positionNow = position + offset[i]; //加了offset后就为上下左右的位置
             int[] X_y = PositionToX_Y(positionNow);
             boolean InRange = X_y[0] >= 0 && X_y[0] < Game.getRow()
-                    && X_y[1] >= 0 && X_y[1] < Game.getCol();
-            // 按照上下左右搜索, 说以not_go != (i+1)
+                    && X_y[1] >= 0 && X_y[1] < Game.getCol(); //是否在棋盘范围内
+            // 按照上下左右搜索, 所以not_go != (i+1)，即每次只搜索3个方向，不搜索来的方向
             if (InRange && (TypeBlock[X_y[0]][X_y[1]] == nullType && not_go != (i + 1))
                     || (X_y[0] == Location[2] && X_y[1] == Location[3])) {
-                if (i >= 2 && X_y[0] != x)
+                //在范围类且这个位置在空白且不为上次的方向，或者这个位置就是目标点
+                if (i >= 2 && X_y[0] != x)//如果在搜索左右方向时跳行了就不执行下面
                     continue;
-                int offset_turn = 0;
-                if (not_go != go[i])
+                int offset_turn = 0;  //是否转弯的补充值
+                if (not_go != go[i])  //不是来的方向就是补充1
                     offset_turn = 1;
-                if (have_turn + offset_turn <= max_turn)
+                if (have_turn + offset_turn <= max_turn)//转弯数小于最大转弯数，加入队列等待搜索
                     location_queue.add(new _Location(X_y[0], X_y[1], go[i], have_turn + offset_turn));
             }
         }
     }
 
+    //两点之间是否可达
     private boolean isArrive() {
         // direction 下: -1 上: 1 右: -1 左:1
-        location_queue.clear();
-        int now_x = Location[0];
-        int now_y = Location[1];
-        int not_go = 0;
-        int have_turn = -1;
-        while (now_x != Location[2] || now_y != Location[3]) {
-            _isArrive(now_x, now_y, not_go, have_turn);
+        location_queue.clear(); //清空队列
+        int now_x = Location[0];//起始点x坐标
+        int now_y = Location[1];//起始点y坐标
+        int not_go = 0;//初始化not_go参数，此参数为记录这个点是为了不让搜索原路返回
+        int have_turn = -1;//初始化已经转弯的次数
+        while (now_x != Location[2] || now_y != Location[3]) { //如果现在的位置不是目标位置就继续搜索
+            _isArrive(now_x, now_y, not_go, have_turn); //判断现在
             Log.d(TAG, "isArrive: size" + location_queue.size());
-            if (location_queue.isEmpty()) {
+            if (location_queue.isEmpty()) { //如果队列空了，折代表不可达
                 Log.d(TAG, "isArrive: false");
                 return false;
             }
             Log.d(TAG, "isArrive: location" + now_x + " " + now_y + " " + have_turn);
-            _Location position = location_queue.poll();
+            _Location position = location_queue.poll(); //弹出队首元素，继续搜索
             now_x = position.getX();
             now_y = position.getY();
             not_go = position.getNot_go();
@@ -160,7 +162,7 @@ class _Location {
     private int not_go;
     private int have_turn;
 
-    // not_go 1:上 2:下 link:左 4:右
+    // not_go 1:上 2:下 3:左 4:右
     _Location(int x, int y, int not_go, int have_turn) {
         this.x = x;
         this.y = y;
