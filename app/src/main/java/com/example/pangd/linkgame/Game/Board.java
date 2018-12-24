@@ -5,14 +5,18 @@ import android.util.Log;
 
 import com.example.pangd.linkgame.R;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 import java.util.Random;
+import java.util.Stack;
 
 public class Board {
     private static final String TAG = "Board";
-
+    private _Location end;
     private int[][] TypeBlock;  //连连看当前信息
+    private Stack<_Location> location_link = new Stack<_Location>(); ;
 
     static Queue<_Location> location_queue = new LinkedList<_Location>();  //寻径时的队列
 
@@ -102,6 +106,38 @@ public class Board {
         return new int[]{position / Game.getCol(), position % Game.getCol()};
     }
 
+    public List<Integer> getLinkRoad(){
+        List<Integer> link = new ArrayList<>();
+        // not_go 上下左右 1,2,3,4
+        int[] offset = new int[]{-Game.getCol(), Game.getCol(), -1, 1}; //要调整位置信息
+        link.add(X_YToPosition(Location[2], Location[3]));
+        Log.d(TAG, "getLinkRoad: location:"+Location[2] + " " + Location[3]);
+        int location_Xnow = Location[2];
+        int location_Ynow = Location[3];
+        _Location temp = location_link.pop();
+        int not_go = temp.getNot_go();
+        while ((location_Xnow != Location[0] || location_Ynow != Location[1])){
+            int position = X_YToPosition(location_Xnow, location_Ynow);
+            int[] location_now = PositionToX_Y(position + offset[not_go-1]);
+            do {
+//                Log.d(TAG, "getLinkRoad: len:"+location_link.size());
+                temp = location_link.pop();
+            }while ((temp.getX()!=location_now[0] || temp.getY()!=location_now[1]) && !location_link.empty());
+            location_Xnow = temp.getX();
+            location_Ynow = temp.getY();
+//            Log.d(TAG, "getLinkRoad: location: " + location_Xnow + " " + location_Ynow);
+//            Log.d(TAG, "getLinkRoad: not go: " + not_go + " " + temp.getNot_go());
+            if (not_go != temp.getNot_go()){
+                link.add(X_YToPosition(location_Xnow, location_Ynow));
+                Log.d(TAG, "getLinkRoad: location:"+location_Xnow + " " + location_Ynow);
+            }
+            not_go = temp.getNot_go();
+        }
+//        link.add(X_YToPosition(Location[0], Location[1]));
+        Log.d(TAG, "getLinkRoad: len: " + link.size());
+        return link;
+    }
+
     private void _isArrive(int x, int y, int not_go, int have_turn) {
         // not_go 上下左右 1,2,3,4
         // not_go 就是上次从那个方向来的
@@ -139,17 +175,21 @@ public class Board {
         while (now_x != Location[2] || now_y != Location[3]) { //如果现在的位置不是目标位置就继续搜索
             _isArrive(now_x, now_y, not_go, have_turn); //判断现在
             Log.d(TAG, "isArrive: size" + location_queue.size());
+            location_link.push(new _Location(now_x, now_y, not_go, 0));
             if (location_queue.isEmpty()) { //如果队列空了，折代表不可达
                 Log.d(TAG, "isArrive: false");
                 return false;
             }
             Log.d(TAG, "isArrive: location" + now_x + " " + now_y + " " + have_turn);
             _Location position = location_queue.poll(); //弹出队首元素，继续搜索
+            Log.d(TAG, "isArrive: len_location: " + location_link.size());
             now_x = position.getX();
             now_y = position.getY();
             not_go = position.getNot_go();
             have_turn = position.getHave_turn();
         }
+        location_link.push(new _Location(now_x, now_y, not_go, have_turn));
+        Log.d(TAG, "isArrive: len: " + location_link.size());
         return true;
     }
 

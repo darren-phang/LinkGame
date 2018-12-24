@@ -5,8 +5,10 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".Game_F">
-
-
+    <com.example.pangd.linkgame.Other.DrawView
+        android:id="@+id/drawline"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
     <include layout="@layout/content_main" />
 
     <LinearLayout

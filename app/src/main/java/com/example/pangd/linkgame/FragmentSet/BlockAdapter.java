@@ -19,7 +19,7 @@ public class BlockAdapter extends RecyclerView.Adapter<BlockAdapter.ViewHolder> 
 
     private OnItemClickListener mOnItemClickListener;
 
-    static class ViewHolder extends RecyclerView.ViewHolder{
+    public static class ViewHolder extends RecyclerView.ViewHolder{
         View blockView;
         ImageView Block_image;
         ImageView Block_background;

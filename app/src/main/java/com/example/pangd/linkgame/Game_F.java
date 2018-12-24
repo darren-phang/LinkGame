@@ -2,6 +2,7 @@ package com.example.pangd.linkgame;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Point;
 import android.media.SoundPool;
 import android.os.Bundle;
 import android.os.Handler;
@@ -25,8 +26,11 @@ import com.example.pangd.linkgame.FragmentSet.BlockAdapter;
 import com.example.pangd.linkgame.FragmentSet.Item;
 import com.example.pangd.linkgame.Game.Board;
 import com.example.pangd.linkgame.Game.NewGame;
+import com.example.pangd.linkgame.Other.DrawView;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -53,12 +57,13 @@ public class Game_F extends Fragment {
     SoundPoolUtil sound;//管理声音的类
     private static final String TAG = "Game_F";
     int click_music = 1;//是否有点击音效
+    private DrawView drawView;
 
     public int getClick_music() {
         return click_music;
     }
 
-    public void setClick_music(int click_music){
+    public void setClick_music(int click_music) {
         this.click_music = click_music;
     }
 
@@ -84,6 +89,7 @@ public class Game_F extends Fragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_game, container,
                 false);
+        drawView = view.findViewById(R.id.drawline);
         sound = SoundPoolUtil.getInstance(getContext());
         fab = (Button) view.findViewById(R.id.fab);
         startButton = (Button) view.findViewById(R.id.start);
@@ -227,7 +233,7 @@ public class Game_F extends Fragment {
                     int[] _info = board.NextStep(position);
                     if (_info[0] != 0) {
                         if (_info.length == 3) {
-                            if(_info[2]==R.drawable.null_image){
+                            if (_info[2] == R.drawable.null_image) {
                                 sound.play(sound.REPEAT, click_music);
                             }//点重
                             adapter.changeItem(_info[1], -1, _info[2]);
@@ -235,14 +241,15 @@ public class Game_F extends Fragment {
                             adapter.changeItem(_info[1], R.drawable.null_image, -1);
                             adapter.changeItem(_info[2], R.drawable.null_image, R.drawable.null_image);
                             sound.play(sound.LINK, click_music);    //消除
+                            drawLine();
+
                             if (_info.length == 5) {
                                 sound.play(sound.WIN, click_music);   //获胜
                                 stopTimer();
-                                sendRankBroadcast((double)(allTime-allTime_Temp)/10);
+                                sendRankBroadcast((double) (allTime - allTime_Temp) / 10);
                             }
                         }
-                    }
-                    else {
+                    } else {
                         sound.play(sound.WRONG, click_music);   //点错
                     }
                 }
@@ -254,7 +261,27 @@ public class Game_F extends Fragment {
         IsStart = false;
     }
 
-    private void sendRankBroadcast(double costTime){
+    private void drawLine() {
+        List<Integer> road = board.getLinkRoad();
+//        Collections.reverse(road);
+        Log.d(TAG, "drawLine: road size" + road.size());
+        List<Point> printPoints = new ArrayList<>();
+        for (int i = 0; i < road.size(); i++) {
+            int _position = (int) road.get(i);
+            Log.d(TAG, "drawLine: _position: " + _position);
+            RecyclerView.ViewHolder holder = recyclerView.findViewHolderForAdapterPosition(_position);
+            if (holder != null && holder instanceof BlockAdapter.ViewHolder) {
+                BlockAdapter.ViewHolder viewHolder = (BlockAdapter.ViewHolder) holder;
+                int[] location = new int[2];
+                viewHolder.itemView.getLocationOnScreen(location);
+                printPoints.add(new Point(location[0]+50, location[1]-150));
+                Log.d("drawLine", "第" + i + "个  x坐标：" + location[0] + " y坐标：" + location[1]);
+            }
+        }
+        drawView.drawLine(printPoints);
+    }
+
+    private void sendRankBroadcast(double costTime) {
         // 名字、耗时、上榜时间
         Log.d(TAG, "sendRankBroadcast: send broadcast succeefully");
         Intent intent = new Intent("com.example.broadcast.RANK_INFOMATION");
@@ -270,16 +297,18 @@ public class Game_F extends Fragment {
         stopTimer();
     }
 }
+
 class SoundPoolUtil {
     private static SoundPoolUtil soundPoolUtil;
     private SoundPool soundPool;
-    public int START=1;  //开始音效
-    public int WIN=2;    //获胜音效
-    public int LOSS=3;
-    public int LINK=4;
-    public int FLUSH=5;
-    public int WRONG=6;
-    public int REPEAT=7;
+    public int START = 1;  //开始音效
+    public int WIN = 2;    //获胜音效
+    public int LOSS = 3;
+    public int LINK = 4;
+    public int FLUSH = 5;
+    public int WRONG = 6;
+    public int REPEAT = 7;
+
     //单例模式
     public static SoundPoolUtil getInstance(Context context) {
         if (soundPoolUtil == null)
@@ -289,21 +318,21 @@ class SoundPoolUtil {
 
     private SoundPoolUtil(Context context) {
         soundPool = new SoundPool.Builder()
-                    .setMaxStreams(10)   //可同时播放声音数量
-                    .build();
+                .setMaxStreams(10)   //可同时播放声音数量
+                .build();
         //加载音频文件
         soundPool.load(context, R.raw.start, 1);
         soundPool.load(context, R.raw.win, 3);
         soundPool.load(context, R.raw.lose, 3);
         soundPool.load(context, R.raw.link, 1);
         soundPool.load(context, R.raw.spread, 2);
-        soundPool.load(context, R.raw.wrong,1);
+        soundPool.load(context, R.raw.wrong, 1);
         soundPool.load(context, R.raw.repeat, 1);
     }
 
     public void play(int number, int Isopen) {
         //播放音频
-        if (Isopen == 1){
+        if (Isopen == 1) {
             soundPool.play(number, 1, 1, 0, 0, 1);
             //左右声道相同，优先级最低，不循环播放，速率正常
         }

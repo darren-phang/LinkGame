@@ -67,6 +67,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import de.hdodenhof.circleimageview.CircleImageView;
+
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
@@ -79,7 +81,7 @@ public class MainActivity extends AppCompatActivity
     private RankInfoReceiver rankInfoReceiver;
     private IntentFilter intentFilter;
     private CameraOps cameraOps = new CameraOps();
-    private ImageView headImage;
+    private CircleImageView headImage;
     private Uri imageUri; //图片路径
     private File imageFile; //图片文件
     private String imagePath;
@@ -130,7 +132,7 @@ public class MainActivity extends AppCompatActivity
         View view = navigationView.getHeaderView(0);
         username_view = view.findViewById(R.id.username);
         username_view.setText(Username);
-        headImage = (ImageView) view.findViewById(R.id.imageView);
+        headImage = (CircleImageView) view.findViewById(R.id.imageView);
         Log.d(TAG, "onCreate: headImage: " + headImage);
         headImage.setOnClickListener(new View.OnClickListener() {
             @Override
