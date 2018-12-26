@@ -91,7 +91,7 @@ public class MainActivity extends AppCompatActivity
     private final static int ICON = 2;
     private final static int CAMERAPRESS = 3;
     private final static int ICONPRESS = 4;
-    private int background_music=1;
+    private int background_music = 1;
     private BackgroundSound backgroundSound;
 
     @Override
@@ -105,7 +105,14 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onResume() {
         super.onResume();
+        setPrefenence();
         bar_Action = true;
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        backgroundSound.pause();
     }
 
     @Override
@@ -125,7 +132,6 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
         backgroundSound = new BackgroundSound(MainActivity.this, R.raw.merry_christmas);
-        setPrefenence();
         StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
         StrictMode.setVmPolicy(builder.build());
         builder.detectFileUriExposure();
@@ -372,25 +378,25 @@ public class MainActivity extends AppCompatActivity
 
     // 声音控制
     private void stop_background_Sound() {
-        if (background_music == 1){ //如果目前正在播放背景音乐就执行
+        if (background_music == 1) { //如果目前正在播放背景音乐就执行
             SharedPreferences.Editor editor = getSharedPreferences(Username,
                     MODE_PRIVATE).edit();//获得sharedPreferences的编辑器
             editor.putInt("background_music", 0); //数据存储
             editor.apply();
             background_music = 0; //设置背景音乐状态为未播放
-            backgroundSound._release_background_sound(); //停止背景音乐
+            backgroundSound.playOrPause(); //停止背景音乐
         }
 
     }
 
     private void start_background_Sound() {
-        if (background_music == 0){
+        if (background_music == 0) {
             SharedPreferences.Editor editor = getSharedPreferences(Username,
                     MODE_PRIVATE).edit();
             editor.putInt("background_music", 1);
             editor.apply();
             background_music = 1;
-            backgroundSound._create_background_sound();
+            backgroundSound.playOrPause();
         }
     }
 
@@ -445,7 +451,7 @@ public class MainActivity extends AppCompatActivity
 
     }
 
-    private void set_new_name(String name){
+    private void set_new_name(String name) {
         SharedPreferences preferences = getSharedPreferences(Username, MODE_PRIVATE);
         int background_music = preferences.getInt("background_music", 1);
         int click_music = preferences.getInt("click_music", 1);
@@ -519,7 +525,7 @@ public class MainActivity extends AppCompatActivity
         SharedPreferences preferences = getSharedPreferences(Username, MODE_PRIVATE);
         background_music = preferences.getInt("background_music", 1);
         if (background_music == 1) {
-            backgroundSound._create_background_sound();
+            backgroundSound.playOrPause();
         }
         int click_music = preferences.getInt("click_music", 1);
         Now_Fragmet.setClick_music(click_music);
@@ -609,7 +615,7 @@ public class MainActivity extends AppCompatActivity
     }
 }
 
-class CameraOps{
+class CameraOps {
     /**
      * //     * @param uri The Uri to check.
      * //     * @return Whether the Uri authority is ExternalStorageProvider.
@@ -763,8 +769,25 @@ class BackgroundSound {
     private static MediaPlayer mp = null;// 声明一个MediaPlayer对象
     private Context context;
     private int rawID;
-    public void playBGSound() {
-        mp.start();// 开始播放
+
+    void playOrPause() {
+        if (mp.isPlaying()) {
+            mp.pause();
+        } else {
+            mp.start();
+        }
+    }
+
+    void pause(){
+        mp.pause();
+    }
+
+    void _create_background_sound() {
+        if (mp != null) {
+            mp.release();// 释放资源
+        }
+        mp = MediaPlayer.create(context, rawID);
+        mp.setLooping(true);
         // 为MediaPlayer添加播放完事件监听器
         mp.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
@@ -779,42 +802,17 @@ class BackgroundSound {
         });
     }
 
-    private Thread thread;// 声明一个线程对象
-
-    void _release_background_sound() {
-        mp.stop();
-        mp.release();
-        mp = null;
-    }
-
-    void _create_background_sound() {
-        if (mp != null) {
-            mp.release();// 释放资源
-        }
-        mp = MediaPlayer.create(context, rawID);
-        thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                playBGSound();// 播放背景音乐
-            }
-        });
-        thread.start();
-    }
-
     void onDestroy() {
         if (mp != null) {
             mp.stop();// 停止播放
             mp.release();// 释放资源
             mp = null;
         }
-        if (thread != null) {
-            thread = null;
-        }
     }
 
     BackgroundSound(Context context, int rawID) {
         this.context = context;
         this.rawID = rawID;
-
+        _create_background_sound();
     }
 }
