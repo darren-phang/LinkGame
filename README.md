@@ -1,2 +1,2 @@
 # LinkGame
-![Image text](p_0.png)
+![Image text](/app/src/main/res/drawable/advertise.png)
