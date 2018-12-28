@@ -1,2 +1,2 @@
 # LinkGame
-![Image text](p0.png)
+![Image text](p_0.png)
